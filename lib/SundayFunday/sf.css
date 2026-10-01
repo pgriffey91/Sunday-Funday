@@ -1,0 +1,262 @@
+/* Shared styles for the Draft & FA, Record Book, and On This Day pages.
+   Colors come from the --sf* tokens defined in src/theme (light + dark). */
+
+.sf-page {
+    position: relative;
+    z-index: 1;
+    width: 94%;
+    max-width: 1200px;
+    margin: 2.5em auto 6em;
+    color: var(--sfText);
+}
+
+.sf-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25em;
+    padding: 1.4em 1.6em;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--sfNavy) 0%, var(--sfNavyDeep) 100%);
+    color: var(--sfCream);
+    border: 1px solid rgba(198, 154, 82, 0.45);
+    box-shadow: 0 10px 30px -18px rgba(18, 25, 36, 0.8);
+    margin-bottom: 1.8em;
+}
+.sf-hero h1 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 1.9em;
+    margin: 0;
+    line-height: 1.1;
+    color: var(--sfCream);
+}
+.sf-hero p {
+    margin: 0.35em 0 0;
+    color: #c9cfd8;
+    font-size: 0.95em;
+    line-height: 1.45;
+    max-width: 62ch;
+}
+.sf-hero .material-icons {
+    font-size: 2.6em;
+    color: var(--sfGold);
+}
+.sf-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.72em;
+    font-weight: 700;
+    color: var(--sfGold);
+}
+
+.sf-section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6em;
+    font-size: 1.35em;
+    font-weight: 700;
+    margin: 2.2em 0 0.4em;
+    color: var(--sfText);
+}
+.sf-section-title::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, var(--sfGold), transparent);
+    opacity: 0.5;
+    align-self: center;
+}
+.sf-sub {
+    color: var(--sfMuted);
+    font-size: 0.92em;
+    line-height: 1.5;
+    margin: 0 0 1em;
+    max-width: 80ch;
+}
+
+.sf-card {
+    background: var(--sfCard);
+    border: 1px solid var(--sfBorder);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.sf-empty {
+    padding: 2em 1em;
+    text-align: center;
+    color: var(--sfMuted);
+    font-style: italic;
+}
+
+.sf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.15em 0.6em;
+    border-radius: 999px;
+    font-size: 0.78em;
+    font-weight: 600;
+    background: var(--sfCardAlt);
+    border: 1px solid var(--sfBorder);
+    color: var(--sfText);
+    white-space: nowrap;
+}
+.sf-pill-gold { background: rgba(198, 154, 82, 0.16); border-color: rgba(198, 154, 82, 0.5); color: var(--sfAccentText); }
+.sf-pill-slate { background: rgba(79, 124, 141, 0.14); border-color: rgba(79, 124, 141, 0.45); color: var(--sfSlate); }
+.sf-pill-leather { background: rgba(168, 85, 44, 0.12); border-color: rgba(168, 85, 44, 0.4); color: var(--sfAccentText); }
+
+.sf-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+    background: var(--sfCardAlt);
+    border: 1px solid var(--sfBorder);
+}
+.sf-avatar-lg { width: 56px; height: 56px; }
+
+/* Tables */
+.sf-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--sfBorder);
+    background: var(--sfCard);
+}
+.sf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.sf-table th {
+    text-align: left;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sfMuted);
+    font-weight: 700;
+    padding: 0.8em 0.9em;
+    background: var(--sfCardAlt);
+    border-bottom: 1px solid var(--sfBorder);
+    white-space: nowrap;
+}
+.sf-table th.sortable { cursor: pointer; user-select: none; }
+.sf-table th.sortable:hover { color: var(--sfText); }
+.sf-table th.sorted { color: var(--sfAccentText); }
+.sf-table td {
+    padding: 0.7em 0.9em;
+    border-bottom: 1px solid var(--sfBorder);
+    vertical-align: middle;
+}
+.sf-table tr:last-child td { border-bottom: none; }
+.sf-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sf-table .team-cell { display: flex; align-items: center; gap: 0.6em; min-width: 160px; }
+.sf-table tbody tr:hover { background: var(--sfCardAlt); }
+
+/* Rules lists */
+.sf-rules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1em;
+}
+.sf-rules .sf-card { padding: 1.1em 1.3em; }
+.sf-rules h3 {
+    margin: 0 0 0.6em;
+    font-size: 1.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+.sf-rules h3 .material-icons { font-size: 1.2em; color: var(--sfLeather); }
+.sf-rules ul { margin: 0; padding-left: 1.15em; }
+.sf-rules li { margin: 0.35em 0; line-height: 1.45; font-size: 0.92em; }
+
+/* Trade cards (On This Day + pick drawer) */
+.sf-trade-teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75em;
+}
+.sf-trade-team {
+    background: var(--sfCardAlt);
+    border: 1px solid var(--sfBorder);
+    border-radius: 10px;
+    padding: 0.8em 0.9em;
+}
+.sf-trade-team-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 700;
+    margin-bottom: 0.35em;
+}
+.sf-trade-received {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--sfMuted);
+    margin-bottom: 0.25em;
+}
+.sf-trade-team ul { margin: 0; padding-left: 1.1em; }
+.sf-trade-team li { font-size: 0.9em; margin: 0.2em 0; line-height: 1.35; }
+.sf-trade-team li.pick { color: var(--sfAccentText); }
+.sf-trade-team li.faab { color: var(--sfSlate); }
+
+/* Side drawer */
+.sf-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 20, 0.45);
+    z-index: 50;
+}
+.sf-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(520px, 100%);
+    background: var(--sfCard);
+    border-left: 3px solid var(--sfGold);
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.25);
+    z-index: 51;
+    overflow-y: auto;
+    padding: 1.4em 1.4em 3em;
+    box-sizing: border-box;
+    color: var(--sfText);
+}
+.sf-drawer-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--sfBorder);
+    background: var(--sfCardAlt);
+    color: var(--sfText);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+}
+.sf-drawer h2 { margin: 0.2em 0 0.2em; font-size: 1.4em; }
+
+button.sf-btn {
+    min-height: 40px;
+    padding: 0 1em;
+    border-radius: 10px;
+    border: 1px solid var(--sfBorder);
+    background: var(--sfCard);
+    color: var(--sfText);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+button.sf-btn:hover { border-color: var(--sfGold); }
+button.sf-btn:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 700px) {
+    .sf-hero { flex-direction: column; align-items: flex-start; padding: 1.1em 1.1em; }
+    .sf-hero h1 { font-size: 1.5em; }
+    .sf-hero > .material-icons { display: none; }
+    .sf-page { width: auto; margin: 1.5em 16px 5em; }
+}
