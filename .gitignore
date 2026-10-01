@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+/.svelte-kit
+/.vercel
+/package
+.env
+static/smui-dark.css
+static/smui.css
+build
+.vercel_build_output
+static/players.json

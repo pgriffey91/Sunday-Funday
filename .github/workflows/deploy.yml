@@ -1,0 +1,60 @@
+# Builds the site and publishes it to GitHub Pages.
+# Runs on every push to main, once a day (to refresh the player database),
+# and on demand from the Actions tab ("Run workflow").
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "17 10 * * *" # daily, ~5 AM Central
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh player database from Sleeper
+        run: node scripts/build-players.mjs
+
+      - name: Build site
+        run: |
+          # With a custom domain (static/CNAME), the site lives at the domain root.
+          # Otherwise it lives at https://<user>.github.io/<repo>/.
+          if [ -f static/CNAME ]; then export BASE_PATH=""; else export BASE_PATH="/${GITHUB_REPOSITORY#*/}"; fi
+          echo "BASE_PATH=$BASE_PATH"
+          npm run build
+          touch build/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
