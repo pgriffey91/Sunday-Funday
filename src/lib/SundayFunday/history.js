@@ -342,6 +342,7 @@ export async function buildOnThisDay(date = new Date()) {
     const seasonToLeagueId = new Map(chain.map((l) => [String(l.season), l.league_id]));
 
     const trades = [];
+    const waivers = []; // waiver claims + free-agent adds/drops
     const drafts = [];
 
     await mapLimit(chain, 2, async (league) => {
@@ -356,10 +357,24 @@ export async function buildOnThisDay(date = new Date()) {
 
         const txs = await getSeasonTransactions(league);
         for (const tx of txs) {
-            if (tx.type !== 'trade') continue;
             const ts = tx.status_updated || tx.created;
             if (!sameDay(ts)) continue;
-            trades.push({ season, ts, teams: await describeTrade(tx, shell, players, seasonToLeagueId) });
+            if (tx.type === 'trade') {
+                trades.push({ season, ts, teams: await describeTrade(tx, shell, players, seasonToLeagueId) });
+            } else if (tx.type === 'waiver' || tx.type === 'free_agent') {
+                const rid = (tx.roster_ids && tx.roster_ids[0]) ?? Object.values(tx.adds || tx.drops || {})[0];
+                const bid = tx.settings && typeof tx.settings.waiver_bid === 'number' ? tx.settings.waiver_bid : null;
+                waivers.push({
+                    season,
+                    ts,
+                    kind: tx.type === 'waiver' ? 'Waiver' : 'Free Agent',
+                    bid,
+                    team: shell.rosterName.get(rid) || `Team ${rid}`,
+                    avatar: shell.rosterAvatar.get(rid) || null,
+                    adds: Object.keys(tx.adds || {}).map((pid) => playerLabel(players, pid)),
+                    drops: Object.keys(tx.drops || {}).map((pid) => playerLabel(players, pid)),
+                });
+            }
         }
 
         try {
@@ -395,10 +410,12 @@ export async function buildOnThisDay(date = new Date()) {
     });
 
     trades.sort((a, b) => b.ts - a.ts);
+    waivers.sort((a, b) => b.ts - a.ts);
     drafts.sort((a, b) => Number(b.season) - Number(a.season));
 
     return {
         trades,
+        waivers,
         drafts,
         dateLabel: date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }),
         seasons: chain.map((l) => l.season).sort(),

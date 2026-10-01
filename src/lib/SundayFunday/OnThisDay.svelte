@@ -9,9 +9,11 @@
     let error = null;
     let loading = false;
     let req = 0;
+    let showWaivers = false;
 
     const load = async () => {
         const my = ++req;
+        showWaivers = false;
         loading = true;
         error = null;
         try {
@@ -52,7 +54,7 @@
         <div>
             <div class="sf-eyebrow">On This Day</div>
             <h1>{day.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })} in Sunday Funday History</h1>
-            <p>Every trade, plus every startup and rookie draft, that happened on this date in any past season.</p>
+            <p>Every trade, draft, and waiver move that happened on this date in any past season.</p>
         </div>
     </header>
 
@@ -68,7 +70,7 @@
         <Loading message="Checking every season for what happened on this day…" />
     {:else}
         <div class:dim={loading}>
-            {#if !data.trades.length && !data.drafts.length}
+            {#if !data.trades.length && !data.drafts.length && !data.waivers.length}
                 <div class="sf-card sf-empty">
                     Nothing on record happened on {data.dateLabel} in {data.seasons.length} seasons of league history. Try another day.
                 </div>
@@ -106,6 +108,34 @@
                     </article>
                 {/each}
             {/if}
+                {#if data.waivers.length}
+                    <article class="sf-card event waivers">
+                        <button class="waiver-toggle" on:click={() => (showWaivers = !showWaivers)} aria-expanded={showWaivers}>
+                            <span class="sf-pill sf-pill-slate">📝 Waiver Wire</span>
+                            <span class="wcount">{data.waivers.length} move{data.waivers.length === 1 ? '' : 's'}</span>
+                            <span class="ago">{[...new Set(data.waivers.map((w) => w.season))].join(' · ')}</span>
+                            <span class="chev" class:open={showWaivers}>▾</span>
+                        </button>
+                        {#if showWaivers}
+                            <ul class="wlist">
+                                {#each data.waivers as w}
+                                    <li class="wrow">
+                                        <div class="wmeta">
+                                            <span class="wdate">{fmtDate(w.ts)}</span>
+                                            <span class="wteam">{#if w.avatar}<img class="sf-avatar tiny" src={w.avatar} alt="" />{/if}{w.team}</span>
+                                        </div>
+                                        <div class="wmoves">
+                                            {#each w.adds as a}
+                                                <span class="add">+ {a}{#if w.kind === 'Waiver' && w.bid != null}<span class="bid">${w.bid}</span>{:else if w.kind === 'Free Agent'}<span class="bid fa">FA</span>{/if}</span>
+                                            {/each}
+                                            {#each w.drops as d}<span class="drop">− {d}</span>{/each}
+                                        </div>
+                                    </li>
+                                {/each}
+                            </ul>
+                        {/if}
+                    </article>
+                {/if}
         </div>
     {/if}
 </div>
@@ -119,4 +149,23 @@
     summary { cursor: pointer; font-weight: 600; margin-bottom: 0.6em; color: var(--sfMuted); }
     .pickcol { text-align: left; font-weight: 700; color: var(--sfAccentText); width: 4em; }
     .dim { opacity: 0.5; transition: opacity 0.2s; }
+    .waiver-toggle {
+        display: flex; align-items: center; gap: 0.6em; flex-wrap: wrap; width: 100%;
+        background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; min-height: 44px;
+    }
+    .wcount { font-weight: 800; font-size: 1.05em; color: var(--sfText); }
+    .chev { margin-left: auto; font-size: 1.2em; color: var(--sfMuted); transition: transform 0.2s; }
+    .chev.open { transform: rotate(180deg); }
+    .wlist { list-style: none; margin: 0.8em 0 0; padding: 0; border-top: 1px solid var(--sfBorder); }
+    .wrow { display: flex; gap: 1em; padding: 0.65em 0; border-bottom: 1px solid var(--sfBorder); flex-wrap: wrap; }
+    .wrow:last-child { border-bottom: none; }
+    .wmeta { display: flex; flex-direction: column; gap: 0.2em; min-width: 190px; }
+    .wdate { font-size: 0.78em; color: var(--sfMuted); }
+    .wteam { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 700; font-size: 0.92em; }
+    .wmoves { display: flex; flex-direction: column; gap: 0.2em; font-size: 0.9em; }
+    .add { color: #2f8f5b; font-weight: 600; }
+    .drop { color: #c0492b; }
+    .bid { margin-left: 0.45em; font-size: 0.8em; font-weight: 700; padding: 0.05em 0.45em; border-radius: 4px; background: rgba(198,154,82,0.18); color: var(--sfAccentText); }
+    .bid.fa { background: rgba(79,124,141,0.15); color: var(--sfSlate); }
+    .tiny { width: 18px; height: 18px; }
 </style>
