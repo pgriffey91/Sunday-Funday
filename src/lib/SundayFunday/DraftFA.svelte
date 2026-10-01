@@ -45,7 +45,7 @@
         'Slow draft: 8-hour clock per pick, paused from 9 PM to 8 AM. Miss your window and you get leap-frogged until you pick.',
         'Picks can be traded while the draft is live.',
         'Picks 1–4 go to the four non-playoff teams, ordered by potential points (Max PF), lowest first. Ties go to overall record.',
-        'Picks 5–10 go to the playoff teams by finish: 10 Champion · 9 Runner-up · 8 3rd · 7 4th · 6 6th place · 5 5th place (winner of the 5th-place game).',
+        'Picks 5–10 go to the playoff teams by finish: 1.05 winner of the 5th-place game · 1.06 loser of the 5th-place game · 1.07 4th place · 1.08 3rd place · 1.09 runner-up · 1.10 champion.',
         'Since 2023, the consolation-bracket winner is also awarded pick 2.11. The Toilet Bowl never affects draft order.',
     ];
     const faRules = [
@@ -126,7 +126,16 @@
         </div>
 
         <h2 class="sf-section-title">How the order is set</h2>
-        <p class="sf-sub">Seeds 1–4 by record, seeds 5–6 are the two best points-for totals among everyone else, seeds 7–10 miss the playoffs and draft 1.01–1.04 by Max PF.</p>
+        <p class="sf-sub">During the season, the board above is a projection: the four teams outside the playoff picture draft 1.01–1.04 by Max PF, and the six playoff teams fill 1.05–1.10 by current seed. Once the playoffs are over, the final order is:</p>
+        <ol class="sf-sub order-list">
+            <li><strong>1.01–1.04:</strong> non-playoff teams by Max PF (potential points), lowest first</li>
+            <li><strong>1.05:</strong> winner of the 5th-place game</li>
+            <li><strong>1.06:</strong> loser of the 5th-place game</li>
+            <li><strong>1.07:</strong> 4th place</li>
+            <li><strong>1.08:</strong> 3rd place</li>
+            <li><strong>1.09:</strong> runner-up</li>
+            <li><strong>1.10:</strong> champion</li>
+        </ol>
         <div class="sf-table-wrap">
             <table class="sf-table">
                 <thead>
@@ -268,6 +277,8 @@
     }
     .cutline td { border-bottom: 2px dashed var(--sfGold) !important; }
     .small { font-size: 0.82em; margin-top: 0.6em; }
+    .order-list { padding-left: 1.4em; margin-top: -0.4em; }
+    .order-list li { margin: 0.2em 0; }
 
     @media (max-width: 1100px) {
         .round-picks { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
