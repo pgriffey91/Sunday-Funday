@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { buildDraftBoard, findPickAcquisition } from './history';
+    import { buildDraftBoard, findPickAcquisition, listPastRookieDrafts, buildPastDraftBoard } from './history';
     import Drawer from './Drawer.svelte';
     import TradeTeams from './TradeTeams.svelte';
     import Loading from './Loading.svelte';
@@ -12,7 +12,37 @@
     let acqLoading = false;
     let token = 0;
 
+    // Past rookie drafts (picked from the year buttons under the live board)
+    let pastDrafts = [];
+    let pastSeason = null;
+    let pastBoard = null;
+    let pastLoading = false;
+    let pastError = false;
+    const pastCache = new Map();
+    let pastReq = 0;
+
+    const showPast = async (entry) => {
+        pastSeason = entry.season;
+        pastError = false;
+        if (pastCache.has(entry.season)) { pastBoard = pastCache.get(entry.season); return; }
+        const my = ++pastReq;
+        pastLoading = true;
+        try {
+            const b = await buildPastDraftBoard(entry);
+            pastCache.set(entry.season, b);
+            if (my === pastReq) pastBoard = b;
+        } catch (e) {
+            console.error(e);
+            if (my === pastReq) pastError = true;
+        } finally {
+            if (my === pastReq) pastLoading = false;
+        }
+    };
+
     onMount(async () => {
+        listPastRookieDrafts()
+            .then((list) => { pastDrafts = list; if (list.length) showPast(list[0]); })
+            .catch((e) => console.error(e));
         try {
             board = await buildDraftBoard();
         } catch (e) {
@@ -125,6 +155,57 @@
             {/each}
         </div>
 
+
+        <h2 class="sf-section-title">Past Rookie Drafts</h2>
+        {#if pastDrafts.length}
+            <div class="years" role="tablist" aria-label="Draft year">
+                {#each pastDrafts as d}
+                    <button
+                        class="sf-btn year"
+                        class:active={pastSeason === d.season}
+                        role="tab"
+                        aria-selected={pastSeason === d.season}
+                        on:click={() => showPast(d)}
+                    >{d.season}</button>
+                {/each}
+            </div>
+            <p class="sf-sub">Every pick from the {pastSeason} rookie draft. Tap a pick to see the trades behind it.</p>
+            {#if pastError}
+                <div class="sf-card sf-empty">Couldn't load the {pastSeason} draft from Sleeper. Try again in a minute.</div>
+            {:else if pastLoading && !pastBoard}
+                <Loading message="Loading the {pastSeason} rookie draft…" />
+            {:else if pastBoard}
+                <div class="board" class:dim={pastLoading}>
+                    {#each pastBoard.rounds as r}
+                        <div class="round">
+                            <div class="round-label">Round {r.round}</div>
+                            <div class="round-picks" style="--cols: {r.picks.length}">
+                                {#each r.picks as pick}
+                                    <button
+                                        class="pick past"
+                                        class:traded={pick.traded}
+                                        on:click={() => openPick(pick)}
+                                        aria-label="Pick {pick.label}: {pick.playerName}, drafted by {pick.ownerName}"
+                                    >
+                                        <span class="pick-num">{pick.label}</span>
+                                        <span class="pick-player">{pick.playerName}</span>
+                                        {#if pick.pos}<span class="pos pos-{pick.pos}">{pick.pos}{pick.nflTeam ? ` · ${pick.nflTeam}` : ''}</span>{/if}
+                                        <span class="pick-team small-team">
+                                            {#if pick.ownerAvatar}<img class="sf-avatar tiny" src={pick.ownerAvatar} alt="" />{/if}
+                                            {pick.ownerName}
+                                        </span>
+                                        {#if pick.traded}<span class="pick-via">via {pick.originalName}</span>{/if}
+                                    </button>
+                                {/each}
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        {:else}
+            <div class="sf-card sf-empty">No completed rookie drafts found yet.</div>
+        {/if}
+
         <h2 class="sf-section-title">How the order is set</h2>
         <p class="sf-sub">During the season, the board above is a projection: the four teams outside the playoff picture draft 1.01–1.04 by Max PF, and the six playoff teams fill 1.05–1.10 by current seed. Once the playoffs are over, the final order is:</p>
         <ol class="sf-sub order-list">
@@ -192,7 +273,13 @@
     {#if selected}
         <div class="sf-eyebrow">{selected.season} Rookie Draft</div>
         <h2>Pick {selected.label}</h2>
-        <p class="sf-sub">Currently owned by <strong>{selected.ownerName}</strong></p>
+        {#if selected.past}
+            <p class="sf-sub">
+                <strong>{selected.ownerName}</strong> selected <strong>{selected.playerName}</strong>{selected.pos ? ` (${selected.pos}${selected.nflTeam ? `, ${selected.nflTeam}` : ''})` : ''}.
+            </p>
+        {:else}
+            <p class="sf-sub">Currently owned by <strong>{selected.ownerName}</strong></p>
+        {/if}
 
         {#if acq && acq.type === 'bonus'}
             <p class="sf-sub">Pick 2.11 goes to the consolation-bracket winner (2023 amendment). Sleeper can't hold an 11th pick, so the commissioner sets the winner in <code>leagueInfo.js</code> once the bracket is decided.</p>
@@ -201,7 +288,7 @@
         {:else if acq && acq.type === 'original'}
             <p class="sf-sub">{selected.originalName}'s original pick — never traded.</p>
         {:else if acq && acq.type === 'trade'}
-            <p class="sf-sub">Acquired in a trade on {fmtDate(acq.ts)} (originally {selected.originalName}'s):</p>
+            <p class="sf-sub">{selected.past ? 'Pick acquired' : 'Acquired'} in a trade on {fmtDate(acq.ts)} (originally {selected.originalName}'s):</p>
             <TradeTeams teams={acq.teams} />
         {:else if acq && acq.type === 'error'}
             <p class="sf-sub">Couldn't look up this pick's history right now — try again in a moment.</p>
@@ -277,6 +364,18 @@
     }
     .cutline td { border-bottom: 2px dashed var(--sfGold) !important; }
     .small { font-size: 0.82em; margin-top: 0.6em; }
+    .years { display: flex; flex-wrap: wrap; gap: 0.45em; margin: 0.2em 0 0.9em; }
+    .year.active { background: var(--sfNavy); color: var(--sfCream); border-color: var(--sfGold); }
+    .dim { opacity: 0.5; transition: opacity 0.2s; }
+    .pick.past { gap: 0.25em; }
+    .pick-player { font-size: 0.82em; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+    .pos { font-size: 0.66em; font-weight: 700; padding: 0.05em 0.45em; border-radius: 4px; background: var(--sfCardAlt); color: var(--sfMuted); }
+    .pos-QB { background: var(--QB); color: #fff; }
+    .pos-RB { background: var(--RB); color: #fff; }
+    .pos-WR { background: var(--WR); color: #fff; }
+    .pos-TE { background: var(--TE); color: #fff; }
+    .small-team { display: inline-flex; align-items: center; gap: 0.3em; font-weight: 500; font-size: 0.7em; color: var(--sfMuted); }
+    .tiny { width: 16px; height: 16px; }
     .order-list { padding-left: 1.4em; margin-top: -0.4em; }
     .order-list li { margin: 0.2em 0; }
 

@@ -566,3 +566,69 @@ export async function findPickAcquisition(pick) {
     if (!match) return { type: 'unknown' };
     return { type: 'trade', ts: match.ts, teams: match.teams };
 }
+
+/* ======================================================================
+   PAST ROOKIE DRAFTS
+   ====================================================================== */
+
+// Seasons that have a completed rookie draft on Sleeper, newest first.
+// (The 2021 startup draft is 33 rounds, so pickRookieDraft skips it.)
+export async function listPastRookieDrafts() {
+    const chain = await collectSeasonChain();
+    const out = [];
+    await mapLimit(chain, 3, async (league) => {
+        try {
+            const drafts = await cachedJSON(`${API}/league/${league.league_id}/drafts`);
+            const rookie = pickRookieDraft(drafts);
+            if (rookie && rookie.status === 'complete') out.push({ season: String(league.season), league, draftId: rookie.draft_id });
+        } catch (e) { /* skip season */ }
+    });
+    return out.sort((a, b) => Number(b.season) - Number(a.season));
+}
+
+// One past rookie draft as a board: who picked, who they took, and whose
+// pick it originally was (a pick's draft_slot never changes when it's traded).
+export async function buildPastDraftBoard(entry) {
+    const [shell, players, draft, picks] = await Promise.all([
+        getSeasonShell(entry.league),
+        getPlayers(),
+        cachedJSON(`${API}/draft/${entry.draftId}`),
+        cachedJSON(`${API}/draft/${entry.draftId}/picks`),
+    ]);
+    const slotToRoster = draft.slot_to_roster_id || {};
+    const teams = (draft.settings && draft.settings.teams) || Object.keys(slotToRoster).length || 10;
+
+    const rounds = new Map();
+    for (const p of [...(picks || [])].sort((a, b) => a.pick_no - b.pick_no)) {
+        const slot = p.draft_slot || ((p.pick_no - 1) % teams) + 1;
+        const originalRid = Number(slotToRoster[slot] ?? p.roster_id);
+        const ownerRid = Number(p.roster_id);
+        const meta = p.metadata || {};
+        const player = players[p.player_id];
+        const name = player ? [player.fn, player.ln].filter(Boolean).join(' ')
+            : [meta.first_name, meta.last_name].filter(Boolean).join(' ') || '—';
+        const pos = (player && player.pos) || meta.position || '';
+        const nflTeam = meta.team || (player && player.t) || '';
+        if (!rounds.has(p.round)) rounds.set(p.round, []);
+        rounds.get(p.round).push({
+            label: `${p.round}.${String(((p.pick_no - 1) % teams) + 1).padStart(2, '0')}`,
+            round: p.round,
+            season: entry.season,
+            past: true,
+            playerName: name,
+            pos,
+            nflTeam,
+            originalRid,
+            originalName: shell.rosterName.get(originalRid) || `Team ${originalRid}`,
+            ownerRid,
+            ownerName: shell.rosterName.get(ownerRid) || `Team ${ownerRid}`,
+            ownerAvatar: shell.rosterAvatar.get(ownerRid) || null,
+            traded: ownerRid !== originalRid,
+            acquisition: null,
+        });
+    }
+    return {
+        season: entry.season,
+        rounds: [...rounds.entries()].sort((a, b) => a[0] - b[0]).map(([round, picks]) => ({ round, picks })),
+    };
+}
